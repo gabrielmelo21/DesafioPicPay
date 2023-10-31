@@ -1,4 +1,4 @@
-package com.picpaysimplificado.picpaysimplificado.Domain.Users;
+package com.picpaysimplificado.picpaysimplificado.domain.users;
 
 import jakarta.persistence.*;
 

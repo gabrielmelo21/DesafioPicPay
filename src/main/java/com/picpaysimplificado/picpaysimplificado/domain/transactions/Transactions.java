@@ -1,6 +1,6 @@
-package com.picpaysimplificado.picpaysimplificado.Domain.Transactions;
+package com.picpaysimplificado.picpaysimplificado.domain.transactions;
 
-import com.picpaysimplificado.picpaysimplificado.Domain.Users.Users;
+import com.picpaysimplificado.picpaysimplificado.domain.users.Users;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -19,12 +19,12 @@ public class Transactions {
 
     private BigDecimal amount;
 
-    @Column(name = "sender_id")
+    @JoinColumn(name = "sender_id")
     @ManyToOne
     private Users sender;
 
-    @Column(name = "receiver_id")
     @ManyToOne
+    @JoinColumn(name = "receiver_id")
     private Users receiver;
 
     private LocalDateTime timestamp;
