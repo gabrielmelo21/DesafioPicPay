@@ -1,6 +1,7 @@
 package com.picpaysimplificado.picpaysimplificado.services;
 
 
+import com.picpaysimplificado.picpaysimplificado.domain.transactions.Transactions;
 import com.picpaysimplificado.picpaysimplificado.domain.users.Users;
 import com.picpaysimplificado.picpaysimplificado.dtos.TransactionDTO;
 import com.picpaysimplificado.picpaysimplificado.repositories.TransactionsRepository;
@@ -14,29 +15,56 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 
 @Service
 @AllArgsConstructor
 public class TransactionsService {
-
+    @Autowired
     private UsersService usersService;
+    @Autowired
     private TransactionsRepository repository;
+    @Autowired
     private RestTemplate restTemplate;
+    @Autowired
+    private NotificationService notificationService;
+
 
     public TransactionsService() {
     }
 
-    public void createTransaction(TransactionDTO transaction) throws Exception{
+    public Transactions createTransaction(TransactionDTO transaction) throws Exception{
        Users sender = this.usersService.findUserById(transaction.senderId());
-       Users receiver = this.usersService.findUserById(transaction.senderId());
+       Users receiver = this.usersService.findUserById(transaction.receiverId());
 
-       usersService.validateTransaction(sender, transaction.value());
+       usersService.validateTransaction(sender, receiver, transaction.value());
+
+     boolean isAuthorized = this.authorizeTransaction(sender, transaction.value());
+
+     if (!isAuthorized){
+          throw new Exception("Transação não autorizada");
+     }
 
 
+        Transactions newTransaction = new Transactions();
+        newTransaction.setAmount(transaction.value());
+        newTransaction.setSender(sender);
+        newTransaction.setReceiver(receiver);
+        newTransaction.setTimestamp(LocalDateTime.now());
 
+        sender.setBalance(sender.getBalance().subtract(transaction.value()));
+        receiver.setBalance(receiver.getBalance().add(transaction.value()));
 
+       this.repository.save(newTransaction);
+       this.usersService.saveUser(sender);
+       this.usersService.saveUser(receiver);
+
+       notificationService.sendNotification(sender, "Transação Realizada com Sucesos.");
+       notificationService.sendNotification(receiver, "Transação recebida com Sucesso.");
+
+       return newTransaction;
    }
 
    public boolean authorizeTransaction(Users sender, BigDecimal value){
